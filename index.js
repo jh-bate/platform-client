@@ -29,6 +29,32 @@ module.exports = function(host, superagent) {
   function saveSession(newUserid,newToken){
     token = newToken;
     userid = newUserid;
+    if (newToken != null) {
+        setTimeout(
+          function(){
+            if (token == null || newUserid !== userid) {
+              return;
+            }
+
+            superagent.get(makeUrl('/auth/login'))
+              .set(sessionTokenHeader, token)
+              .end(
+              function(err, res){
+                if (err) {
+                  log(err);
+                  return;
+                }
+
+                if (res.status === 200) {
+                  saveSession(newUserid, res.headers[sessionTokenHeader]);
+                } else {
+                  log('Unknown response when refreshing token' + res.status);
+                }
+              });
+          },
+          10 * 60 * 1000
+        );
+      }
   }
 
   return {
