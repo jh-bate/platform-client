@@ -1,5 +1,5 @@
 {
-  "name": "c-side",
+  "name": "platform-client",
   "version": "0.0.1",
   "description": "client side platform library",
   "main": "index.js",
