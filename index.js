@@ -15,15 +15,9 @@
 
 'use strict';
 
-var amoeba = require('amoeba');
-var superagent = require('superagent');
 var _ = require('lodash');
 
-var pre = amoeba.pre;
-
-module.exports = function(host) {
-  pre.notNull(host,'the host is required');
-
+module.exports = function(host, superagent) {
   var sessionTokenHeader = 'x-tidepool-session-token';
   var token = null;
   var userid = null;

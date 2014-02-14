@@ -15,6 +15,7 @@
 
 'use strict';
 var expect = require('salinity').expect;
+var superagent = require('superagent');
 var userId;
 
 describe('platform client', function() {
@@ -47,7 +48,7 @@ describe('platform client', function() {
 
   before(function(done){
 
-    platform = require('../index')('http://localhost:8009');
+    platform = require('../index')('http://localhost:8009',superagent);
 
     createUser(function(error,data){
       if(error){

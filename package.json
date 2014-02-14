@@ -10,10 +10,7 @@
   "author": "",
   "license": "",
   "dependencies": {
-    "amoeba": "0.0.3",
-    "superagent": "0.16.0",
-    "lodash": "2.4.1",
-    "os-browserify": "0.1.1"
+    "lodash": "2.4.1"
   },
   "devDependencies": {
     "grunt": "0.4.1",
@@ -23,6 +20,7 @@
     "grunt-docco2": "0.1.2",
     "grunt-mocha-test": "0.7.0",
     "grunt-shell-spawn": "0.2.4",
-    "salinity": "0.0.3"
+    "salinity": "0.0.3",
+    "superagent": "0.16.0"
   }
 }
