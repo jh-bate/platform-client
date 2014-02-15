@@ -16,6 +16,8 @@
 'use strict';
 var expect = require('salinity').expect;
 var superagent = require('superagent');
+
+var token;
 var userId;
 
 describe('platform client', function() {
@@ -27,10 +29,34 @@ describe('platform client', function() {
       emails :['fake@user.com']
     };
 
+  var saveSession=function(newUserid,newToken){
+    // just as we would in the app
+    token = newToken;
+    userId = newUserid;
+    console.log('save session');
+
+    if (newToken != null) {
+      setTimeout(
+        function(){
+          if (token == null || newUserid !== userId) {
+            return;
+          }
+          platform.refreshToken(token,newUserid,function(error,sessionData){
+            console.log('token refresh ');
+            saveSession(sessionData.userid,sessionData.token);
+          });
+        },
+        10 * 60
+      );
+    }
+  };
+
   var createUser=function(cb){
     //try login first then create user if error
     platform.login(user,function(error,data){
       userId = data.userid;
+
+      saveSession(data.userid,data.token);
 
       if(error){
         platform.signUp(user,cb);
@@ -41,7 +67,7 @@ describe('platform client', function() {
 
   var addUserTeamGroup=function(cb){
     console.log('add team');
-    platform.addGroupForUser(userId, { members : [userId]}, 'team', function(error,data){
+    platform.addGroupForUser(userId, { members : [userId]}, 'team', token ,function(error,data){
       cb(error,data);
     });
   };
@@ -61,6 +87,7 @@ describe('platform client', function() {
 
   it('logs in user', function(done) {
     platform.login(user,function(error,data){
+      saveSession(data.userid,data.token);
       expect(error).to.not.exist;
       expect(data).to.exist;
       done();
@@ -81,7 +108,9 @@ describe('platform client', function() {
     });
 
     it('returns the team asked for', function(done) {
-      platform.getGroupForUser(userId,'team',function(error,data){
+
+      platform.getGroupForUser(userId,'team',token, function(error,data){
+        console.log(error);
         expect(error).to.not.exist;
         expect(data).to.exist;
         done();
@@ -115,7 +144,7 @@ describe('platform client', function() {
         messagetext : 'In three words I can sum up everything I have learned about life: it goes on.'
       };
       //add note
-      platform.startMessageThread(groupId, message, function(error,data){
+      platform.startMessageThread(groupId, message, token, function(error,data){
         expect(error).to.not.exist;
         expect(data).to.exist;
 
@@ -128,13 +157,13 @@ describe('platform client', function() {
           messagetext : 'Good point bro!'
         };
         //comment on the note
-        platform.replyToMessageThread(messageId,comment, function(error,data){
+        platform.replyToMessageThread(messageId,comment, token, function(error,data){
 
           expect(error).to.not.exist;
           expect(data).to.exist;
 
           //get the whole thread
-          platform.getMessageThread(messageId, function(error,data){
+          platform.getMessageThread(messageId, token, function(error,data){
             expect(error).to.not.exist;
             expect(data).to.exist;
             expect(data.length).to.equal(2);
@@ -160,7 +189,7 @@ describe('platform client', function() {
       var twoWeeksAgo = new Date();
       twoWeeksAgo.setDate(twoWeeksAgo.getDate()-14);
 
-      platform.getAllMessagesForTeam(groupId, twoWeeksAgo,Date(), function(error,data){
+      platform.getAllMessagesForTeam(groupId, twoWeeksAgo,Date(), token, function(error,data){
         expect(error).to.not.exist;
         expect(data).to.exist;
         done();

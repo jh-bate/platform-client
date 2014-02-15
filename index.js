@@ -19,42 +19,9 @@ var _ = require('lodash');
 
 module.exports = function(host, superagent) {
   var sessionTokenHeader = 'x-tidepool-session-token';
-  var token = null;
-  var userid = null;
-
+  
   function makeUrl(path) {
     return host + path;
-  }
-
-  function saveSession(newUserid,newToken){
-    token = newToken;
-    userid = newUserid;
-    if (newToken != null) {
-        setTimeout(
-          function(){
-            if (token == null || newUserid !== userid) {
-              return;
-            }
-
-            superagent.get(makeUrl('/auth/login'))
-              .set(sessionTokenHeader, token)
-              .end(
-              function(err, res){
-                if (err) {
-                  log(err);
-                  return;
-                }
-
-                if (res.status === 200) {
-                  saveSession(newUserid, res.headers[sessionTokenHeader]);
-                } else {
-                  log('Unknown response when refreshing token' + res.status);
-                }
-              });
-          },
-          10 * 60 * 1000
-        );
-      }
   }
 
   return {
@@ -76,8 +43,7 @@ module.exports = function(host, superagent) {
           }
 
           if (res.status === 200) {
-            saveSession(res.body.userid, res.headers[sessionTokenHeader]);
-            cb(null, res.body);
+            cb(null,{userid:res.body.userid,token:res.headers[sessionTokenHeader],user:res.body});
           } else if (res.status === 401) {
             cb({ message: 'Unauthorized' });
           } else {
@@ -106,9 +72,7 @@ module.exports = function(host, superagent) {
         }
 
         if (res.status === 201) {
-          var userApiBody = res.body;
-          saveSession(userApiBody.userid, res.headers[sessionTokenHeader]);
-
+          cb(null,{userid:res.body.userid,token:res.headers[sessionTokenHeader]});
         } else if (res.status === 401) {
           cb({ message: 'Unauthorized' });
         } else {
@@ -117,7 +81,24 @@ module.exports = function(host, superagent) {
       });
 
     },
-    getGroupForUser: function (userId,groupType,cb){
+    refreshUserToken : function(token,newUserid,cb){
+      superagent.get(makeUrl('/auth/login'))
+        .set(sessionTokenHeader, token)
+        .end(
+        function(err, res){
+          if (err) {
+            log(err);
+            return;
+          }
+
+          if (res.status === 200) {
+            cb(null,{userid:newUserid,token:res.headers[sessionTokenHeader]});
+          } else {
+            cb({message:'Unknown response when refreshing token' + res.status},null);
+          }
+        });
+    },
+    getGroupForUser: function (userId,groupType,token,cb){
       superagent
       .get(makeUrl('/metadata/' + userId + '/groups'))
       .set(sessionTokenHeader, token)
@@ -156,7 +137,7 @@ module.exports = function(host, superagent) {
           }
         });
     },
-    addGroupForUser : function(userId,groupMembers,groupType,cb){
+    addGroupForUser : function(userId,groupMembers,groupType,token,cb){
       if (userId == null) {
         return cb({ message: 'Must specify a userId' });
       }
@@ -195,7 +176,7 @@ module.exports = function(host, superagent) {
             });
         });
     },
-    getUserTeamAndMessages :function(userId,cb){
+    getUserTeamAndMessages :function(userId,token,cb){
       return cb(null,null);
     },
     getAllMessagesForTeam : function(groupId,from, to, cb){
@@ -216,7 +197,7 @@ module.exports = function(host, superagent) {
           }
         });
     },
-    replyToMessageThread : function(messageId,comment,cb){
+    replyToMessageThread : function(messageId,comment,token,cb){
       superagent
         .post(makeUrl('/message/reply/'+messageId))
         .set(sessionTokenHeader, token)
@@ -236,7 +217,7 @@ module.exports = function(host, superagent) {
           }
         });
     },
-    startMessageThread : function(groupId,message,cb){
+    startMessageThread : function(groupId,message,token,cb){
 
       superagent
         .post(makeUrl('/message/send/'+groupId))
@@ -257,7 +238,7 @@ module.exports = function(host, superagent) {
           }
         });
     },
-    getMessageThread : function(messageId,cb){
+    getMessageThread : function(messageId,token,cb){
       superagent
         .get(makeUrl('/message/thread/'+messageId))
         .set(sessionTokenHeader, token)
