@@ -127,7 +127,11 @@ module.exports = function(host, superagent) {
                 }
 
                 if (membersResult.status === 200) {
-                  return cb(null, membersResult.body);
+                  var group = {
+                    id: groupId,
+                    members: membersResult.body.members
+                  };
+                  return cb(null, group);
                 }
                 else {
                   return cb({ message: 'Unknown response code from groups ' + res.status });
@@ -184,10 +188,6 @@ module.exports = function(host, superagent) {
         .set(sessionTokenHeader, token)
         .end(
         function(err, res) {
-
-  console.log(err);
-  console.log(res.body);
-  
 
           if (err != null) {
             return cb(err);

@@ -104,11 +104,14 @@ describe('platform client', function() {
 
     });
 
-    it('returns the team asked for', function(done) {
+    it('returns the team group asked for', function(done) {
 
-      platform.getGroupForUser(userId,'team',token, function(error,data){
+      platform.getGroupForUser(userId,'team',token, function(error,team){
         expect(error).to.not.exist;
-        expect(data).to.exist;
+        expect(team).to.exist;
+        expect(team.members).to.exist;
+        expect(team.members).to.be.a('array');
+        expect(team.id).to.exist;
         done();
       });
     });
@@ -182,7 +185,6 @@ describe('platform client', function() {
     });
 
     it('all messages for the group from the last two weeks', function(done) {
-      //TODO
       var twoWeeksAgo = new Date();
       twoWeeksAgo.setDate(twoWeeksAgo.getDate()-14);
       var today = new Date();
