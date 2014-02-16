@@ -33,7 +33,6 @@ describe('platform client', function() {
     // just as we would in the app
     token = newToken;
     userId = newUserid;
-    console.log('save session');
 
     if (newToken != null) {
       setTimeout(
@@ -41,8 +40,7 @@ describe('platform client', function() {
           if (token == null || newUserid !== userId) {
             return;
           }
-          platform.refreshToken(token,newUserid,function(error,sessionData){
-            console.log('token refresh ');
+          platform.refreshUserToken(token,newUserid,function(error,sessionData){
             saveSession(sessionData.userid,sessionData.token);
           });
         },
@@ -54,10 +52,10 @@ describe('platform client', function() {
   var createUser=function(cb){
     //try login first then create user if error
     platform.login(user,function(error,data){
-      userId = data.userid;
-
-      saveSession(data.userid,data.token);
-
+      if(data && data.userid){
+        userId = data.userid;
+        saveSession(data.userid,data.token);
+      }
       if(error){
         platform.signUp(user,cb);
       }
@@ -66,7 +64,6 @@ describe('platform client', function() {
   };
 
   var addUserTeamGroup=function(cb){
-    console.log('add team');
     platform.addGroupForUser(userId, { members : [userId]}, 'team', token ,function(error,data){
       cb(error,data);
     });
@@ -110,7 +107,6 @@ describe('platform client', function() {
     it('returns the team asked for', function(done) {
 
       platform.getGroupForUser(userId,'team',token, function(error,data){
-        console.log(error);
         expect(error).to.not.exist;
         expect(data).to.exist;
         done();
@@ -140,11 +136,12 @@ describe('platform client', function() {
       var message = {
         userid : userId,
         groupid : groupId,
-        timestamp : Date(),
+        timestamp : new Date().toISOString(),
         messagetext : 'In three words I can sum up everything I have learned about life: it goes on.'
       };
       //add note
       platform.startMessageThread(groupId, message, token, function(error,data){
+
         expect(error).to.not.exist;
         expect(data).to.exist;
 
@@ -153,7 +150,7 @@ describe('platform client', function() {
         var comment = {
           userid : userId,
           groupid : groupId,
-          timestamp : Date(),
+          timestamp : new Date().toISOString(),
           messagetext : 'Good point bro!'
         };
         //comment on the note
@@ -184,14 +181,17 @@ describe('platform client', function() {
       });
     });
 
-    it.skip('all messages for the group from the last two weeks', function(done) {
+    it('all messages for the group from the last two weeks', function(done) {
       //TODO
       var twoWeeksAgo = new Date();
       twoWeeksAgo.setDate(twoWeeksAgo.getDate()-14);
+      var today = new Date();
 
-      platform.getAllMessagesForTeam(groupId, twoWeeksAgo,Date(), token, function(error,data){
+      platform.getAllMessagesForTeam(groupId, twoWeeksAgo, today, token, function(error,data){
+
         expect(error).to.not.exist;
         expect(data).to.exist;
+        expect(data.length).to.equal(2);
         done();
       });
     });

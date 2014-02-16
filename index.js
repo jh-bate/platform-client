@@ -108,7 +108,6 @@ module.exports = function(host, superagent) {
             return cb(err);
           }
 
-
           if (res.status !== 200) {
             return cb({ message: 'Unknown response code from metadata ' + res.status });
           } else {
@@ -179,12 +178,17 @@ module.exports = function(host, superagent) {
     getUserTeamAndMessages :function(userId,token,cb){
       return cb(null,null);
     },
-    getAllMessagesForTeam : function(groupId,from, to, cb){
+    getAllMessagesForTeam : function(groupId, start, end, token, cb){
       superagent
-        .get(makeUrl('/message/all/'+groupId+'?starttime='+from+'&endtime='+to))
+        .get(makeUrl('/message/all/'+groupId+'?starttime='+start+'&endtime='+end))
         .set(sessionTokenHeader, token)
         .end(
         function(err, res) {
+
+  console.log(err);
+  console.log(res.body);
+  
+
           if (err != null) {
             return cb(err);
           }
